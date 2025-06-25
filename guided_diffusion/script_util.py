@@ -5,7 +5,7 @@ from . import gaussian_diffusion as gd
 from .respace import SpacedDiffusion, space_timesteps
 from .unet import SuperResModel, UNetModel, EncoderUNetModel
 
-NUM_CLASSES = 2
+NUM_CLASSES = 4
 
 
 def diffusion_defaults():
@@ -171,6 +171,8 @@ def create_model(
         
     if dataset=='brats':
       number_in_channels=4
+    elif dataset=='acne':
+      number_in_channels=3  # RGB images
     else:
       number_in_channels=1
     print('numberinchannels', number_in_channels)
@@ -266,6 +268,8 @@ def create_classifier(
         attention_ds.append(image_size // int(res))
     if dataset=='brats':
       number_in_channels=4
+    elif dataset=='acne':
+      number_in_channels=3
     else:
       number_in_channels=1
     print('number_in_channels classifier', number_in_channels)
@@ -275,7 +279,7 @@ def create_classifier(
         image_size=image_size,
         in_channels=number_in_channels,
         model_channels=classifier_width,
-        out_channels=2,
+        out_channels=4,
         num_res_blocks=classifier_depth,
         attention_resolutions=tuple(attention_ds),
         channel_mult=channel_mult,

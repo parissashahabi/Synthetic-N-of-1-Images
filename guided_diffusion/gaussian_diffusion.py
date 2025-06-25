@@ -690,7 +690,7 @@ class GaussianDiffusion:
                      viz.image(visualize(img[0,0,...]), opts=dict(caption=str(i)))
                      viz.image(visualize(img[0, 1,...]), opts=dict(caption=str(i)))
                      viz.image(visualize(img[0, 2,...]), opts=dict(caption=str(i)))
-                     viz.image(visualize(img[0, 3,...]), opts=dict(caption=str(i)))
+                    #  viz.image(visualize(img[0, 3,...]), opts=dict(caption=str(i)))
                      viz.image(visualize(out["saliency"][0,0,...]), opts=dict(caption='saliency'))
               
 

@@ -171,6 +171,14 @@ class TrainLoop:
                 except:
                     self.iterdatal = iter(self.datal)
                     batch, cond, label, _, _ = next(self.iterdatal)
+
+            elif self.dataset=='acne':
+                try:
+                    batch, cond, label, _, _ = next(self.iterdatal)
+                except:
+                    self.iterdatal = iter(self.datal)
+                    batch, cond, label, _, _ = next(self.iterdatal)
+                    
             elif self.dataset=='chexpert':
                 batch, cond = next(self.datal)
                 cond.pop("path", None)

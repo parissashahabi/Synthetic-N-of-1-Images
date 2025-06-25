@@ -1,0 +1,163 @@
+# Dataset files - ignore all training images
+data/
+datasets/
+acne_dataset/
+*/acne_dataset/
+**/acne_dataset/
+
+# Specific acne dataset folders
+acne0_1024/
+acne1_1024/
+acne2_1024/
+acne3_1024/
+*/acne0_1024/
+*/acne1_1024/
+*/acne2_1024/
+*/acne3_1024/
+
+# Image files anywhere in the project
+*.jpg
+*.jpeg
+*.png
+*.bmp
+*.tiff
+*.tif
+*.gif
+*.webp
+*.svg
+
+# But keep specific important images (uncomment if needed)
+# !README_images/
+# !docs/images/
+# !examples/*.png
+
+# Model checkpoints and results
+results/
+checkpoints/
+models/
+weights/
+*.pt
+*.pth
+*.pkl
+*.pickle
+*.h5
+*.ckpt
+
+# Generated samples and outputs
+generated_samples/
+sample_images/
+samples/
+output/
+outputs/
+generated/
+*.npz
+
+# Logs and training outputs
+logs/
+*.log
+*.out
+*.err
+training_log.txt
+training_*.txt
+progress.csv
+tensorboard_logs/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+.venv/
+.env
+conda_env/
+diffusion-env/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb
+
+# PyTorch
+*.pth
+*.pt
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+tmp/
+temp/
+
+# Archives
+*.zip
+*.tar.gz
+*.rar
+*.7z
+
+# Large data files
+*.csv
+*.tsv
+*.json
+*.xml
+*.sql
+
+# MONAI cache
+.cache/
+cache/
+
+# Visdom files
+.visdom/
+
+# Weights & Biases
+wandb/
+
+# MLflow
+mlruns/
+
+# SLURM output files
+slurm-*.out
+*.slurm.out
+
+# Custom directories (add your specific directories)
+backup/
+old/
+archive/
+experiments/

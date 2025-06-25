@@ -7,6 +7,7 @@ import torch as th
 sys.path.append("..")
 sys.path.append(".")
 from guided_diffusion.bratsloader import BRATSDataset
+from guided_diffusion.acneloader import AcneDataset
 from guided_diffusion import dist_util, logger
 from guided_diffusion.image_datasets import load_data
 from guided_diffusion.resample import create_named_schedule_sampler
@@ -42,6 +43,16 @@ def main():
             batch_size=args.batch_size,
             shuffle=True)
        # data = iter(datal)
+
+    elif args.dataset == 'acne':  # Add this entire elif block
+        ds = AcneDataset(args.data_dir, test_flag=False)
+        datal = th.utils.data.DataLoader(
+            ds,
+            batch_size=args.batch_size,
+            shuffle=True,
+            num_workers=2,
+            drop_last=True)
+        print(f'Acne dataset loaded with {len(ds)} images')
 
     elif args.dataset == 'chexpert':
         datal = load_data(
@@ -80,7 +91,7 @@ def create_argparser():
         lr=1e-4,
         weight_decay=0.0,
         lr_anneal_steps=0,
-        batch_size=1,
+        batch_size=4,
         microbatch=-1,  # -1 disables microbatches
         ema_rate="0.9999",  # comma-separated list of EMA values
         log_interval=100,
@@ -88,7 +99,7 @@ def create_argparser():
         resume_checkpoint='',
         use_fp16=False,
         fp16_scale_growth=1e-3,
-        dataset='brats',
+        dataset='acne',
     )
     defaults.update(model_and_diffusion_defaults())
     parser = argparse.ArgumentParser()

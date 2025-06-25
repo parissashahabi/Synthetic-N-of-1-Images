@@ -11,6 +11,7 @@ import sys
 sys.path.append("..")
 sys.path.append(".")
 from guided_diffusion.bratsloader import BRATSDataset
+from guided_diffusion.acneloader import AcneDataset
 import torch.nn.functional as F
 import numpy as np
 import torch as th
@@ -49,6 +50,13 @@ def main():
         batch_size=args.batch_size,
         shuffle=False)
     
+    elif args.dataset=='acne':  # Add this elif block
+      ds = AcneDataset(args.data_dir, test_flag=True)
+      datal = th.utils.data.DataLoader(
+        ds,
+        batch_size=args.batch_size,
+        shuffle=False)
+
     elif args.dataset=='chexpert':
      data = load_data(
          data_dir=args.data_dir,
@@ -120,6 +128,14 @@ def main():
           viz.image(visualize(img[0][0, 2, ...]), opts=dict(caption="img input 2"))
           viz.image(visualize(img[0][0, 3, ...]), opts=dict(caption="img input 3"))
           viz.image(visualize(img[3][0, ...]), opts=dict(caption="ground truth"))
+        elif args.dataset=='acne':  # Add this elif block
+          number = img[4][0]
+          severity_level = img[2][0]
+          print(f'Processing image {number} with severity level {severity_level}')
+          
+          viz.image(visualize(img[0][0, 0, ...]), opts=dict(caption=f"R channel (severity {severity_level})"))
+          viz.image(visualize(img[0][0, 1, ...]), opts=dict(caption=f"G channel (severity {severity_level})"))
+          viz.image(visualize(img[0][0, 2, ...]), opts=dict(caption=f"B channel (severity {severity_level})"))
         else:
           viz.image(visualize(img[0][0, ...]), opts=dict(caption="img input"))
           print('img1', img[1])
@@ -127,9 +143,12 @@ def main():
           print('number', number)
 
         if args.class_cond:
-            classes = th.randint(
-                low=0, high=1, size=(args.batch_size,), device=dist_util.dev()
-            )
+            if args.dataset == 'acne':
+                classes = img[1]["y"]  # Use actual severity labels
+            else:
+                classes = th.randint(
+                    low=0, high=1, size=(args.batch_size,), device=dist_util.dev()
+                )
             model_kwargs["y"] = classes
             print('y', model_kwargs["y"])
         sample_fn = (
@@ -203,7 +222,7 @@ def create_argparser():
         classifier_path="",
         classifier_scale=100,
         noise_level=500,
-        dataset='brats'
+        dataset='acne'
     )
     defaults.update(model_and_diffusion_defaults())
     defaults.update(classifier_defaults())

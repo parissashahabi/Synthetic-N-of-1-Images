@@ -9,6 +9,7 @@ from torch.autograd import Variable
 sys.path.append("..")
 sys.path.append(".")
 from guided_diffusion.bratsloader import BRATSDataset
+from guided_diffusion.acneloader import AcneDataset
 import blobfile as bf
 import torch as th
 os.environ['OMP_NUM_THREADS'] = '8'
@@ -85,6 +86,18 @@ def main():
             batch_size=args.batch_size,
             shuffle=True)
         data = iter(datal)
+        print(f"Training on {len(ds)} data points")
+
+    elif args.dataset == 'acne':  # Add this entire elif block
+        ds = AcneDataset(args.data_dir, test_flag=False)
+        datal = th.utils.data.DataLoader(
+            ds,
+            batch_size=args.batch_size,
+            shuffle=True,
+            num_workers=2,
+            drop_last=True)
+        data = iter(datal)
+        print(f'Acne dataset loaded with {len(ds)} images')
 
     elif args.dataset == 'chexpert':
         data = load_data(
@@ -108,6 +121,7 @@ def main():
             dist_util.load_state_dict(opt_checkpoint, map_location=dist_util.dev())
         )
 
+    print_detailed_config_and_model(args, model, diffusion, opt)
     logger.log("training classifier model...")
 
 
@@ -115,6 +129,10 @@ def main():
         if args.dataset=='brats':
             batch, extra, labels,_ , _ = next(data_loader)
             print('IS BRATS')
+
+        elif args.dataset=='acne':  # Add this elif block
+            batch, extra, labels, _, _ = next(data_loader)
+            print('IS ACNE')
 
         elif  args.dataset=='chexpert':
             batch, extra = next(data_loader)
@@ -150,10 +168,13 @@ def main():
             log_loss_dict(diffusion, sub_t, losses)
 
             loss = loss.mean()
+            accuracy = losses[f"{prefix}_acc@1"].mean()
             if prefix=="train":
                 viz.line(X=th.ones((1, 1)).cpu() * step, Y=th.Tensor([loss]).unsqueeze(0).cpu(),
                      win=loss_window, name='loss_cls',
                      update='append')
+                viz.line(X=th.ones((1, 1)).cpu() * step, Y=th.Tensor([accuracy]).unsqueeze(0).cpu(),
+                     win=acc_window, name='train_acc', update='append')
 
             else:
 
@@ -255,20 +276,91 @@ def create_argparser():
         lr=3e-4,
         weight_decay=0.0,
         anneal_lr=False,
-        batch_size=4,
+        batch_size=8,
         microbatch=-1,
         schedule_sampler="uniform",
         resume_checkpoint="",
         log_interval=1,
         eval_interval=1000,
         save_interval=5000,
-        dataset='brats'
+        dataset='acne'
     )
     defaults.update(classifier_and_diffusion_defaults())
     parser = argparse.ArgumentParser()
     add_dict_to_argparser(parser, defaults)
     return parser
 
+
+def print_detailed_config_and_model(args, model, diffusion, opt):
+    """Print detailed configuration and model information"""
+    
+    # Get model parameters info
+    total_params = sum(p.numel() for p in model.parameters())
+    trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    
+    # Calculate model size
+    param_size = sum(param.nelement() * param.element_size() for param in model.parameters())
+    buffer_size = sum(buffer.nelement() * buffer.element_size() for buffer in model.buffers())
+    model_size_mb = (param_size + buffer_size) / 1024**2
+    
+    # Extract classifier configuration from args
+    print("Classifier Configuration:")
+    print(f"   spatial_dims: 2")
+    print(f"   in_channels: {3 if args.dataset == 'acne' else 4 if args.dataset == 'brats' else 1}")
+    print(f"   out_channels: {4 if args.dataset == 'acne' else 2}")
+    print(f"   model_channels: {args.classifier_width}")
+    print(f"   classifier_depth: {args.classifier_depth}")
+    print(f"   attention_resolutions: {args.classifier_attention_resolutions}")
+    print(f"   use_scale_shift_norm: {args.classifier_use_scale_shift_norm}")
+    print(f"   resblock_updown: {args.classifier_resblock_updown}")
+    print(f"   pool: {args.classifier_pool}")
+    print(f"   with_conditioning: True")
+    print(f"   dataset: {args.dataset}")
+
+    print(f"\nClassifier Training Configuration:")
+    print(f"   iterations: {args.iterations}")
+    print(f"   learning_rate: {args.lr}")
+    print(f"   weight_decay: {args.weight_decay}")
+    print(f"   batch_size: {args.batch_size}")
+    print(f"   microbatch: {args.microbatch}")
+    print(f"   noised: {args.noised}")
+    print(f"   schedule_sampler: {args.schedule_sampler}")
+    print(f"   log_interval: {args.log_interval}")
+    print(f"   save_interval: {args.save_interval}")
+    print(f"   anneal_lr: {args.anneal_lr}")
+    print(f"   use_fp16: {args.classifier_use_fp16}")
+
+    print(f"\nCreating classifier model...")
+    
+    print(f"\nClassifier Model Summary:")
+    print(f"   Total parameters: {total_params:,}")
+    print(f"   Trainable parameters: {trainable_params:,}")
+    print(f"   Model size: {model_size_mb:.1f} MB")
+    print(f"   Image size: {args.image_size}")
+    print(f"   Classes: {4 if args.dataset == 'acne' else 2} ({'acne severity levels' if args.dataset == 'acne' else 'binary classification'})")
+    
+    # Print architecture breakdown
+    print(f"   Architecture breakdown:")
+    for name, module in model.named_modules():
+        if hasattr(module, 'in_channels') and hasattr(module, 'out_channels'):
+            if hasattr(module, 'kernel_size'):
+                print(f"      {name}: {module.in_channels} -> {module.out_channels} (kernel: {module.kernel_size})")
+
+    print(f"\nOptimizer Configuration:")
+    print(f"   Type: {opt.__class__.__name__}")
+    print(f"   Learning rate: {args.lr}")
+    print(f"   Weight decay: {args.weight_decay}")
+    print(f"   Parameters: {total_params:,}")
+    
+    # Print diffusion configuration
+    print(f"\nDiffusion Configuration:")
+    print(f"   num_timesteps: {diffusion.num_timesteps}")
+    print(f"   noise_schedule: linear")
+    print(f"   model_mean_type: {diffusion.model_mean_type}")
+    print(f"   model_var_type: {diffusion.model_var_type}")
+    print(f"   loss_type: {diffusion.loss_type}")
+
+    print("="*80)
 
 if __name__ == "__main__":
     main()
